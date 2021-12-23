@@ -19,21 +19,41 @@ async function main(){
   try {
     await WeatherData.drop();
     await WeatherData.sync({force: true});
-    let rawData = now.records.location[7];
+    let rawData = now.records.location[8];
     console.log('rawData', rawData)
 
-    let newWeatherData = {};
-    rawData.parameter.forEach((parameter) => {
-      newWeatherData[parameter.parameterName] = parameter.parameterValue;
+    // let newWeatherData = {};
+    // rawData.parameter.forEach((parameter) => {
+    //   newWeatherData[parameter.parameterName] = parameter.parameterValue;
+    // })
+    // rawData.weatherElement.forEach((element) => {
+    //   newWeatherData[element.elementName] = element.elementValue;
+    // })
+    // console.log('newWeatherData', newWeatherData);
+    let newWeatherData = locationTrans(rawData);
+    let newWeatherDataArray = now.records.location.map((location) => {
+      return locationTrans(location);
+    });
+    let insertPromiseArray = newWeatherDataArray.map((newWeatherData) => {
+      return WeatherData.create(newWeatherData);;
     })
-    rawData.weatherElement.forEach((element) => {
-      newWeatherData[element.elementName] = element.elementValue;
-    })
-    console.log('newWeatherData', newWeatherData);
-    await WeatherData.create(newWeatherData);
+    await Promises.all(insertPromiseArray);
+    // console.log('newWeatherDataArray', newWeatherDataArray)
+    // await WeatherData.create(newWeatherData);
 
   } catch (e) {
     console.log(e)
   }
 };
 main();
+
+function locationTrans(location){
+  let newWeatherData = {};
+  location.parameter.forEach((parameter) => {
+    newWeatherData[parameter.parameterName] = parameter.parameterValue;
+  })
+  location.weatherElement.forEach((element) => {
+    newWeatherData[element.elementName] = element.elementValue;
+  })
+  return newWeatherData;
+}
