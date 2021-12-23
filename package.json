@@ -1,0 +1,13 @@
+{
+  "name": "cheryl_weather",
+  "type": "module",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "l",
+  "dependencies": {
+    "axios": "^0.24.0",
+    "bull": "^4.2.0",
+    "pg": "^8.7.1",
+    "sequelize": "^6.12.2"
+  }
+}
