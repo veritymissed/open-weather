@@ -17,14 +17,30 @@ const jwtExpiresIn = configurations().jwt.expiresIn;
 
 import { WeatherData } from './models/realtimedata.js';
 
-app.get(
+app.use(
   '/api',
   expressJWT({ secret: jwtPrivateKey, algorithms: ['HS256'] }),
-  function(req, res) {
+  function(req, res, next) {
     if (!req.user.authorized_by_OWB) return res.sendStatus(401);
-    res.sendStatus(200);
+    else next();
+    // res.sendStatus(200);
   }
 );
+
+app.get('/api/taipei', async function(req, res){
+  try {
+    let data = await WeatherData.findAll({
+      where: {
+        CITY_SN: '01'
+      }
+    })
+    res.json(data);
+  } catch (e) {
+    console.log(e)
+    throw e
+  }
+});
+
 app.get('/get_token', function(req, res){
   try {
     console.log('req.query.Authorization', req.query.Authorization);
