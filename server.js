@@ -16,6 +16,11 @@ const jwtPrivateKey = configurations().jwt.secret;
 const jwtExpiresIn = configurations().jwt.expiresIn;
 
 import { WeatherData } from './models/realtimedata.js';
+import { fetchAPI } from './fetchData.js';
+
+app.use(logger('dev'))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
 
 app.use(
   '/api',
@@ -23,9 +28,23 @@ app.use(
   function(req, res, next) {
     if (!req.user.authorized_by_OWB) return res.sendStatus(401);
     else next();
-    // res.sendStatus(200);
   }
 );
+
+app.get('/api', async function(req ,res){
+  try {
+    const body = req.body;
+    console.log('body', body);
+    let data = await WeatherData.findAll();
+    res.json({
+      status: 'success',
+      data
+    });
+  } catch (e) {
+    console.log(e);
+    throw e;
+  }
+});
 
 app.get('/api/taipei', async function(req, res){
   try {
@@ -34,21 +53,33 @@ app.get('/api/taipei', async function(req, res){
         CITY_SN: '01'
       }
     })
-    res.json(data);
+    res.json({
+      status: 'success',
+      data
+    });
   } catch (e) {
-    console.log(e)
-    throw e
+    console.log(e);
+    throw e;
   }
 });
 
-app.get('/get_token', function(req, res){
+app.get('/get_token', async function(req, res){
   try {
     console.log('req.query.Authorization', req.query.Authorization);
-    const token = jwt.sign({ authorized_by_OWB: req.query.Authorization }, jwtPrivateKey, {
-      algorithm: 'HS256',
-      expiresIn: jwtExpiresIn
-    });
-    res.json({token});
+    let auth_token_response = await fetchAPI('/api/v1/rest/datastore/F-D0047-061', req.query.Authorization);
+    // let auth_token_response = await fetchAPI('/api/v1/rest/datastore/F-D0047-061', '1234');
+    // console.log('auth_token_response', auth_token_response)
+    if(auth_token_response.statusCode !== 200) {
+      res.status(auth_token_response.statusCode).json(auth_token_response);
+    }
+    else {
+      const token = jwt.sign({ authorized_by_OWB: req.query.Authorization }, jwtPrivateKey, {
+        algorithm: 'HS256',
+        expiresIn: jwtExpiresIn
+      });
+      res.json({token});
+    }
+    // res.json(auth_token_response)
   } catch (e) {
     throw e;
   }
@@ -71,12 +102,10 @@ app.get('/get_token', function(req, res){
 //     saveUninitialized: true
 //   })
 // )
-app.use(logger('dev'))
-app.use(express.json())
-app.use(express.urlencoded({ extended: false }))
+
 // app.use(express.static(path.join(__dirname, './client')))
 
-app.use('/', function (req, res, next) {
+// app.use('/', function (req, res, next) {
   // console.log('req.session');
   // console.log(req.session);
   // app.locals = {
@@ -84,8 +113,8 @@ app.use('/', function (req, res, next) {
   //   userAvatarUrl: req.session.user ? req.session.user.avatarUrl : '/images/blank-profile-picture.png',
   //   isLogin: req.session.isLogin
   // }
-  next()
-})
+  // next()
+// })
 // var routes = require('./routes')
 // app.use('/', routes)
 // var oauth = require('./routes/oauth')
