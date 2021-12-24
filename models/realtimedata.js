@@ -98,7 +98,7 @@ const WeatherData = postgresConnection.define('weather_data', {
 });
 
 // `sequelize.define` also returns the model
-console.log(WeatherData === postgresConnection.models.User); // true
+console.log(WeatherData === postgresConnection.models.weather_data); // true
 
 // module.exports = User;
 export { WeatherData };

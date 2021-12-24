@@ -11,5 +11,8 @@ export default () => ({
   redis: {
     host: 'localhost',
     secret: 'there is no friends at the dusk',
+  },
+  jwt: {
+    secret: 'we live in a twilight world'
   }
 });
