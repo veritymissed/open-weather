@@ -13,6 +13,7 @@ export default () => ({
     secret: 'there is no friends at the dusk',
   },
   jwt: {
-    secret: 'we live in a twilight world'
+    secret: 'we live in a twilight world',
+    expiresIn: 3600 * 24 * 3
   }
 });

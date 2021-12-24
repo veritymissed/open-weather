@@ -13,6 +13,7 @@ const app = express();
 import expressJWT from 'express-jwt';
 import jwt from 'jsonwebtoken';
 const jwtPrivateKey = configurations().jwt.secret;
+const jwtExpiresIn = configurations().jwt.expiresIn;
 
 import { WeatherData } from './models/realtimedata.js';
 
@@ -27,8 +28,11 @@ app.get(
 app.get('/get_token', function(req, res){
   try {
     console.log('req.query.Authorization', req.query.Authorization);
-    const token = jwt.sign({ authorized_by_OWB: req.query.Authorization }, jwtPrivateKey, { algorithm: 'HS256' });
-    res.json({token})
+    const token = jwt.sign({ authorized_by_OWB: req.query.Authorization }, jwtPrivateKey, {
+      algorithm: 'HS256',
+      expiresIn: jwtExpiresIn
+    });
+    res.json({token});
   } catch (e) {
     throw e;
   }
