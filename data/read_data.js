@@ -11,9 +11,9 @@ import { WeatherData } from '../models/realtimedata.js';
 // console.log('three_day.records.locations[0].location[0]', three_day.records.locations[0].location[0])
 
 // console.log('now', now)
-console.log('now.result', now.result)
+// console.log('now.result', now.result)
 // console.log('now.records.location', now.records.location)
-console.log('now.records.location[7]', now.records.location[7])
+// console.log('now.records.location[7]', now.records.location[7])
 
 async function main(){
   try {
@@ -45,9 +45,9 @@ async function main(){
     console.log(e)
   }
 };
-main();
+// main();
 
-function locationTrans(location){
+export function locationTrans(location){
   let newWeatherData = {};
   location.parameter.forEach((parameter) => {
     newWeatherData[parameter.parameterName] = parameter.parameterValue;
@@ -56,4 +56,15 @@ function locationTrans(location){
     newWeatherData[element.elementName] = element.elementValue;
   })
   return newWeatherData;
+}
+
+export function getInsertPromiseArray(locations){
+  let newWeatherDataArray = locations.map((location) => {
+    return locationTrans(location);
+  });
+  let insertPromiseArray = newWeatherDataArray.map((newWeatherData) => {
+    return WeatherData.create(newWeatherData);;
+  })
+  // await Promises.all(insertPromiseArray);
+  return insertPromiseArray;
 }

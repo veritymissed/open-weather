@@ -15,5 +15,6 @@ export default () => ({
   jwt: {
     secret: 'we live in a twilight world',
     expiresIn: 3600 * 24 * 3
-  }
+  },
+  weatherDataAPIToken: 'CWB-50A7E8D9-75EA-4350-9BAE-67C5974371C0',
 });

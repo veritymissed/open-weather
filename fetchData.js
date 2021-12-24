@@ -1,4 +1,4 @@
-import  { postgresConnection } from './database.js';
+import { postgresConnection } from './database.js';
 import axios from 'axios';
 
 export async function fetchAPI(route, token){
