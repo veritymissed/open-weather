@@ -34,10 +34,10 @@ async function main(){
     let newWeatherDataArray = now.records.location.map((location) => {
       return locationTrans(location);
     });
-    let insertPromiseArray = newWeatherDataArray.map((newWeatherData) => {
-      return WeatherData.create(newWeatherData);;
-    })
-    await Promises.all(insertPromiseArray);
+    // let insertPromiseArray = newWeatherDataArray.map((newWeatherData) => {
+    //   return WeatherData.create(newWeatherData);;
+    // })
+    // await Promises.all(insertPromiseArray);
     // console.log('newWeatherDataArray', newWeatherDataArray)
     // await WeatherData.create(newWeatherData);
 
