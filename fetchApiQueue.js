@@ -1,6 +1,7 @@
 import Bull from 'bull';
 import getConfigurations from './configurations.js';
 const configurations = getConfigurations();
+import { WeatherData } from './models/realtimedata.js';
 import { fetchAPI } from './fetchData.js';
 import { getInsertPromiseArray } from './data/read_data.js'
 
@@ -20,16 +21,17 @@ nodeCron.schedule('45 * * * *', () => {
   );
 });
 
-// fetchDataQueue.add({route: '/api/v1/rest/datastore/O-A0003-001', token: configurations.weatherDataAPIToken});
+const SELECTED_CITY = ['臺北市', '新北市', '桃園市'];
+
 fetchDataQueue.process(async (job) => {
   try {
     const now = new Date();
     const { route, token } = job.data;
     let data = await fetchAPI(route, token);
-    // console.log('data', data)
     const dataObsTime = data.records.location[0].time.obsTime;
     if(data.statusCode !== 200) throw new Error(`Fetch API ${route} error at ${now}`);
-    await Promise.all(getInsertPromiseArray(data.records.location));
+    await WeatherData.sync();
+    await Promise.all(getInsertPromiseArray(data.records.location, SELECTED_CITY));
     return Promise.resolve({
       route,
       startFetchTime: now,

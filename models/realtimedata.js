@@ -92,7 +92,10 @@ const WeatherData = postgresConnection.define('weather_data', {
     type: DataTypes.STRING,
     allowNull: false
   },
-
+  obsTime: {
+    type: DataTypes.DATE,
+    allowNull: false
+  },
 }, {
   freezeTableName: true,
 });

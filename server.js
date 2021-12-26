@@ -18,6 +18,9 @@ const jwtExpiresIn = configurations().jwt.expiresIn;
 import { WeatherData } from './models/realtimedata.js';
 import { fetchAPI } from './fetchData.js';
 
+import { Op } from 'sequelize';
+import moment from 'moment';
+
 app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
@@ -35,7 +38,30 @@ app.get('/api', async function(req ,res){
   try {
     const body = req.body;
     console.log('body', body);
-    let data = await WeatherData.findAll();
+    let queryObj = {};
+    if(body.CITY && body.CITY.length > 0)  queryObj.CITY = body.CITY;
+    if(body.TOWN && body.TOWN.length > 0)  queryObj.TOWN = body.TOWN;
+    if(body.CITY_SN && body.CITY_SN.length > 0)  queryObj.CITY_SN = body.CITY_SN;
+    if(body.TOWN_SN && body.TOWN_SN.length > 0)  queryObj.TOWN_SN = body.TOWN_SN;
+    const from = body.from || null;
+    const to = body.to || null;
+    if( from || to ){
+      queryObj.obsTime = {};
+      if(from && from.length > 0) {
+        const fromTime = moment(parseFloat(from));
+        queryObj.obsTime[Op.gt] = fromTime;
+        console.log('fromTime', fromTime);
+      }
+      if(to && to.length > 0){
+        const toTime = moment(parseFloat(to));
+        queryObj.obsTime[Op.lt] = toTime;
+        console.log('toTime', toTime);
+      }
+    }
+    console.log(queryObj);
+    let data = await WeatherData.findAll({
+      where: queryObj
+    });
     res.json({
       status: 'success',
       data
@@ -84,47 +110,6 @@ app.get('/get_token', async function(req, res){
     throw e;
   }
 });
-// redis and session configs
-// const redis = require('redis')
-// const session = require('express-session')
-// const RedisStore = require('connect-redis')(session)
-// const redisClient = redis.createClient({
-//   url: 'redis://localhost:6379'
-// });
-// redisClient.on('error', function (err) {
-//   console.error(err)
-// })
-// app.use(
-//   session({
-//     store: new RedisStore({ client: redisClient }),
-//     secret: 'keyboard cat',
-//     resave: false,
-//     saveUninitialized: true
-//   })
-// )
-
-// app.use(express.static(path.join(__dirname, './client')))
-
-// app.use('/', function (req, res, next) {
-  // console.log('req.session');
-  // console.log(req.session);
-  // app.locals = {
-  //   userEmail: req.session.user ? req.session.user.email : 'no-one@mail.com',
-  //   userAvatarUrl: req.session.user ? req.session.user.avatarUrl : '/images/blank-profile-picture.png',
-  //   isLogin: req.session.isLogin
-  // }
-  // next()
-// })
-// var routes = require('./routes')
-// app.use('/', routes)
-// var oauth = require('./routes/oauth')
-// app.use('/', oauth)
-// var users = require('./users/users.controller.js')
-// app.use('/api', users)
-// app.use('/users', users)
-// var auth = require('./auth/auth.controller.js')
-// app.use('/api', users)
-// app.use('/auth', auth)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

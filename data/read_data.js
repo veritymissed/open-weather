@@ -14,7 +14,7 @@ import { WeatherData } from '../models/realtimedata.js';
 // console.log('now.result', now.result)
 // console.log('now.records.location', now.records.location)
 // console.log('now.records.location[7]', now.records.location[7])
-
+const SELECT_CITY = ['臺北市', '新北市', '桃園市'];
 async function main(){
   try {
     await WeatherData.drop();
@@ -29,17 +29,20 @@ async function main(){
     // rawData.weatherElement.forEach((element) => {
     //   newWeatherData[element.elementName] = element.elementValue;
     // })
+    // let newWeatherData = locationTrans(rawData);
     // console.log('newWeatherData', newWeatherData);
-    let newWeatherData = locationTrans(rawData);
-    let newWeatherDataArray = now.records.location.map((location) => {
+    let newWeatherDataArray = now.records.location.filter((location) => {
+      const cityOfThisLocation = location.parameter[0].parameterValue;
+      return SELECT_CITY.includes(cityOfThisLocation);
+    })
+    .map((location) => {
+      // console.log('location.parameter[0].parameterValue', location.parameter[0].parameterValue)
       return locationTrans(location);
     });
-    // let insertPromiseArray = newWeatherDataArray.map((newWeatherData) => {
-    //   return WeatherData.create(newWeatherData);;
-    // })
-    // await Promises.all(insertPromiseArray);
-    // console.log('newWeatherDataArray', newWeatherDataArray)
-    // await WeatherData.create(newWeatherData);
+    let insertPromiseArray = newWeatherDataArray.map((newWeatherData) => {
+      return WeatherData.create(newWeatherData);;
+    })
+    await Promise.all(insertPromiseArray);
 
   } catch (e) {
     console.log(e)
@@ -55,11 +58,16 @@ export function locationTrans(location){
   location.weatherElement.forEach((element) => {
     newWeatherData[element.elementName] = element.elementValue;
   })
+  newWeatherData.obsTime = location.time.obsTime;
   return newWeatherData;
 }
 
-export function getInsertPromiseArray(locations){
-  let newWeatherDataArray = locations.map((location) => {
+export function getInsertPromiseArray(locations, selectedCities){
+  let newWeatherDataArray = locations.filter((location) => {
+    const cityOfThisLocation = location.parameter[0].parameterValue;
+    return selectedCities.includes(cityOfThisLocation);
+  })
+  .map((location) => {
     return locationTrans(location);
   });
   let insertPromiseArray = newWeatherDataArray.map((newWeatherData) => {
