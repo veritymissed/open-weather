@@ -5,8 +5,6 @@ const createError = require('http-errors')
 const express = require('express')
 const path = require('path')
 const logger = require('morgan')
-// const cors = require('cors');
-// const configurations = require('./configurations');
 import configurations from './configurations.js';
 const app = express();
 
@@ -28,7 +26,7 @@ app.use(express.urlencoded({ extended: false }))
 app.use(
   '/api',
   expressJWT({ secret: jwtPrivateKey, algorithms: ['HS256'] }),
-  function(req, res, next) {
+  async function(req, res, next) {
     if (!req.user.authorized_by_OWB) return res.sendStatus(401);
     else next();
   }
@@ -72,29 +70,11 @@ app.get('/api', async function(req ,res){
   }
 });
 
-app.get('/api/taipei', async function(req, res){
-  try {
-    let data = await WeatherData.findAll({
-      where: {
-        CITY_SN: '01'
-      }
-    })
-    res.json({
-      status: 'success',
-      data
-    });
-  } catch (e) {
-    console.log(e);
-    throw e;
-  }
-});
-
 app.get('/get_token', async function(req, res){
   try {
     console.log('req.query.Authorization', req.query.Authorization);
     let auth_token_response = await fetchAPI('/api/v1/rest/datastore/F-D0047-061', req.query.Authorization);
-    // let auth_token_response = await fetchAPI('/api/v1/rest/datastore/F-D0047-061', '1234');
-    // console.log('auth_token_response', auth_token_response)
+
     if(auth_token_response.statusCode !== 200) {
       res.status(auth_token_response.statusCode).json(auth_token_response);
     }
@@ -105,7 +85,6 @@ app.get('/get_token', async function(req, res){
       });
       res.json({token});
     }
-    // res.json(auth_token_response)
   } catch (e) {
     throw e;
   }
@@ -187,7 +166,7 @@ function onError (error) {
   }
 }
 
-function onListening () {
+async function onListening () {
   var addr = server.address()
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr

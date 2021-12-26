@@ -9,7 +9,7 @@ export default () => ({
     password: process.env.DATABASE_PASSWORD || 'postgrespassword',
   },
   redis: {
-    host: 'localhost',
+    host: process.env.REDIS_HOST || 'localhost',
     secret: 'there is no friends at the dusk',
   },
   jwt: {

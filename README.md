@@ -8,6 +8,7 @@
 - `Redis`
 - `Postgres`
 - `SequelizeORM`
+- `NodeJS v16.11.1`
 
 ## Structure
 
@@ -15,13 +16,55 @@
 - ExpressServer
 - BullMQ using Redis
 
+## Related file
+- `server.js`
+- `fetchApiQueue.js`
+- `fetchData.js`
+- `database.js`
+- `./models/realtimedata.js`
+- `syncDatabase.js`
+- `configurations.js`
+- `Dockerfile`
+- `docker-compose.yml`
+- `./env/.env.prod`
+
+## Docker compose files
+
+- In `./docker-compose-files/`
+
+- 兩個檔案`docker-compose.dev.yml`(dev), `docker-compose.prod.yml`(production)
+- Dev的只有PostgresDB/Redis
+- Production的除了PostgresDB/Redis，還有將Server與Task Queue封裝成兩個container執行
+
 ## Building
 
+#### Production
+```sh
+cp ./docker-compose-files/docker-compose.prod.yml ./docker-compose.yml
+docker-compose up # Would load ./env/.env.prod configs
+```
 
+#### Dev
+```sh
+cp ./docker-compose-files/docker-compose.dev.yml ./docker-compose.yml
+docker-compose up -d
+
+# Install dependencies
+yarn
+# or use npm
+npm i
+
+# Two terminals
+node server.js
+node fetchApiQueue.js
+
+```
 
 
 ## Steps
-- 先拿著Open Weather API的會員token，header透過 `/get_token` 驗證
+- 預設的API host為 `localhost:8000`
+- 先拿著Open Weather API的會員token透過 `/get_token` 驗證，附帶token的方式為在url後面加上`?Authorization=<token>`
+
 - 取得此Server的jwt
 - 使用jwt存取此Server的API
 
@@ -71,7 +114,7 @@ Failed:
 ### Authorization: Bearer token
 
 附上標頭
-`Authorization: Bearer <JWT_from_get_token>`
+`Authorization: Bearer <JWT_token>`
 
 Ex.
 
@@ -147,9 +190,25 @@ Failed:
 }
 ```
 
+
 ## Task Queue
 
 In `fetchApiQueue.js`
+
+### Scheduling task configs
+
+`45 * * * *` 每小時的45分fetch API，不想慢慢等可以自行調整。
+
+```js
+
+nodeCron.schedule('45 * * * *', () => {
+  console.log('Running a task every hour at 45');
+  fetchDataQueue.add(
+    {route: '/api/v1/rest/datastore/O-A0003-001', token: configurations.weatherDataAPIToken},
+  );
+});
+
+```
 
 Success:
 ```js
@@ -163,3 +222,29 @@ Fetch /api/v1/rest/datastore/O-A0003-001 at Sun Dec 26 2021 15:45:00 GMT+0800 (�
 
 
 ## Configurations
+
+`./configurations.js`
+
+```js
+export default () => ({
+  app_host: process.env.APP_HOST || 'localhost', //API host
+  app_port: process.env.APP_PORT || 8000, //API port
+  database: {
+    host: process.env.DATABASE_HOST || 'localhost',
+    port: process.env.DATABASE_PORT || 5432,
+    user_name: process.env.DATABASE_USER_NAME || 'postgres',
+    database_name: process.env.DATABASE_NAME || 'postgres',
+    password: process.env.DATABASE_PASSWORD || 'postgrespassword',
+  }, //Postgres configs
+  redis: {
+    host: 'localhost',
+    secret: 'there is no friends at the dusk',
+  }, // Redis configs
+  jwt: {
+    secret: 'we live in a twilight world',
+    expiresIn: 3600 * 24 * 3 // default 3 days
+  }, // jwt configs
+  weatherDataAPIToken: ${Token_from_Open_Weather_Data}
+});
+
+```

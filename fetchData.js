@@ -1,5 +1,6 @@
 import { postgresConnection } from './database.js';
 import axios from 'axios';
+import { WeatherData } from './models/realtimedata.js';
 
 export async function fetchAPI(route, token){
   let config = {
@@ -12,38 +13,46 @@ export async function fetchAPI(route, token){
   let async = await new Promise(function(resolve, reject) {
     axios(config)
     .then(function (response) {
-      // console.log(response.data)
-      // console.log('response.data', response.data)
-      // console.log(JSON.stringify(response.data));
-      // return response.data;
-      // resolve(response.data)
       resolve({
         statusCode: 200,
         ...response.data
       });
     })
     .catch(function (error) {
-      // console.log(error.response);
       resolve({
         statusCode: error.response.status,
         statusText: error.response.statusText
       })
-      // console.log(error);
-      // throw error;
     });
   });
   return async;
 }
+
+export function locationTrans(location){
+  let newWeatherData = {};
+  location.parameter.forEach((parameter) => {
+    newWeatherData[parameter.parameterName] = parameter.parameterValue;
+  })
+  location.weatherElement.forEach((element) => {
+    newWeatherData[element.elementName] = element.elementValue;
+  })
+  newWeatherData.obsTime = location.time.obsTime;
+  return newWeatherData;
+}
+
+export function getInsertPromiseArray(locations, selectedCities){
+  let newWeatherDataArray = locations.filter((location) => {
+    const cityOfThisLocation = location.parameter[0].parameterValue;
+    return selectedCities.includes(cityOfThisLocation);
+  })
+  .map((location) => {
+    return locationTrans(location);
+  });
+  let insertPromiseArray = newWeatherDataArray.map((newWeatherData) => {
+    return WeatherData.create(newWeatherData);;
+  })
+  // await Promises.all(insertPromiseArray);
+  return insertPromiseArray;
+}
+
 // fetchAPI('/api/v1/rest/datastore/F-D0047-061', 'CWB-50A7E8D9-75EA-4350-9BAE-67C5974371C0');
-
-
-// Taipei City
-// /v1/rest/datastore/F-D0047-061
-// /v1/rest/datastore/F-D0047-063
-
-// New Taipei City
-// ​/v1​/rest​/datastore​/F-D0047-069
-// ​/v1​/rest​/datastore​/F-D0047-071
-
-// https://opendata.cwb.gov.tw/user/authkey 取得授權碼
-// CWB-50A7E8D9-75EA-4350-9BAE-67C5974371C0

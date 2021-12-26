@@ -1,5 +1,5 @@
 import Bull from 'bull';
-import getConfigurations from './configurations.js';
+import getConfigurations from '../configurations.js';
 const configurations = getConfigurations();
 // const myFirstQueue = new Bull('my-first-queue', {
 //   redis: {
