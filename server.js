@@ -5,13 +5,14 @@ const createError = require('http-errors')
 const express = require('express')
 const path = require('path')
 const logger = require('morgan')
-import configurations from './configurations.js';
+import getConfigurations from './configurations.js';
+const configurations = getConfigurations();
 const app = express();
 
 import expressJWT from 'express-jwt';
 import jwt from 'jsonwebtoken';
-const jwtPrivateKey = configurations().jwt.secret;
-const jwtExpiresIn = configurations().jwt.expiresIn;
+const jwtPrivateKey = configurations.jwt.secret;
+const jwtExpiresIn = configurations.jwt.expiresIn;
 
 import { WeatherData } from './models/realtimedata.js';
 import { fetchAPI } from './fetchData.js';
@@ -19,9 +20,22 @@ import { fetchAPI } from './fetchData.js';
 import { Op } from 'sequelize';
 import moment from 'moment';
 
-import rateLimit from 'express-rate-limit';
+import RateLimit from 'express-rate-limit';
+import RateLimitRedisStore from 'rate-limit-redis';
+import redis from 'redis';
+const client = redis.createClient({
+	host: configurations.redis.host,
+	port: configurations.redis.port
+});
 
-const limiter = rateLimit({
+client.on("error", function(error) {
+  console.error(error);
+});
+
+const limiter = new RateLimit({
+	store: new RateLimitRedisStore({
+		client: client
+	}),
 	windowMs: 15 * 60 * 1000, // 15 minutes
 	max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
 	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
@@ -115,7 +129,7 @@ var http = require('http')
 /**
  * Get port from environment and store in Express.
  */
-var port = normalizePort(configurations().app_port)
+var port = normalizePort(configurations.app_port)
 app.set('port', port)
 
 /**

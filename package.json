@@ -16,6 +16,8 @@
     "morgan": "^1.10.0",
     "node-cron": "^3.0.0",
     "pg": "^8.7.1",
+    "rate-limit-redis": "^2.1.0",
+    "redis": "3",
     "sequelize": "^6.12.2"
   }
 }
