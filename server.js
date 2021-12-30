@@ -67,19 +67,24 @@ app.get('/api', async function(req ,res){
     if(body.TOWN_SN && body.TOWN_SN.length > 0)  queryObj.TOWN_SN = body.TOWN_SN;
     const from = body.from || null;
     const to = body.to || null;
-    if( from || to ){
-      queryObj.obsTime = {};
-      if(from && from.length > 0) {
-        const fromTime = moment(parseFloat(from));
-        queryObj.obsTime[Op.gt] = fromTime;
-        console.log('fromTime', fromTime);
-      }
-      if(to && to.length > 0){
-        const toTime = moment(parseFloat(to));
-        queryObj.obsTime[Op.lt] = toTime;
-        console.log('toTime', toTime);
-      }
-    }
+		queryObj.obsTime = {};
+		if(from && from.length > 0) {
+			const fromTime = moment(parseFloat(from));
+			queryObj.obsTime[Op.gt] = fromTime;
+			console.log('fromTime', fromTime);
+		}
+		else{
+			queryObj.obsTime[Op.gt] = moment(1609430399000);//20201231 23:59
+		}
+		if(to && to.length > 0){
+			const toTime = moment(parseFloat(to));
+			queryObj.obsTime[Op.lt] = toTime;
+			console.log('toTime', toTime);
+		}
+		else{
+			queryObj.obsTime[Op.lt] = moment();
+		}
+
     console.log(queryObj);
     let data = await WeatherData.findAll({
       where: queryObj
