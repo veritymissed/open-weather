@@ -19,22 +19,25 @@ import { fetchAPI } from './fetchData.js';
 
 import { Op } from 'sequelize';
 import moment from 'moment';
+import crypto from 'crypto';
+import util from 'util';
+const apiDataSecret = configurations.jwt.secret;
 
 import RateLimit from 'express-rate-limit';
 import RateLimitRedisStore from 'rate-limit-redis';
 import redis from 'redis';
-const client = redis.createClient({
+const redisClient = redis.createClient({
 	host: configurations.redis.host,
 	port: configurations.redis.port
 });
 
-client.on("error", function(error) {
+redisClient.on("error", function(error) {
   console.error(error);
 });
 
 const limiter = new RateLimit({
 	store: new RateLimitRedisStore({
-		client: client
+		client: redisClient
 	}),
 	windowMs: 15 * 60 * 1000, // 15 minutes
 	max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
@@ -86,9 +89,37 @@ app.get('/api', async function(req ,res){
 		}
 
     console.log(queryObj);
-    let data = await WeatherData.findAll({
-      where: queryObj
-    });
+		let queryObjHashValue = crypto
+		.createHash('sha256', apiDataSecret)
+		.update(JSON.stringify(queryObj))
+		.digest('hex');
+		console.log('queryObjHashValue', queryObjHashValue);
+
+		let data;
+		let cacheDataGetByKey = await new Promise((resolve, reject) => {
+			redisClient.get(queryObjHashValue, (err, res) => {
+				if(err) reject(err);
+				else resolve(res)
+			})
+		})
+		if (!cacheDataGetByKey) {
+			console.log(`data of this queryObj key ${queryObjHashValue} not exists in the redis cache!`);
+			console.log('query the postgres database!');
+			let dataFromDatabase = await WeatherData.findAll({
+				where: queryObj
+			});
+			await new Promise(function(resolve, reject) {
+				redisClient.set(queryObjHashValue, JSON.stringify(dataFromDatabase), (err, res) => {
+					if(err) reject(err);
+					else resolve(res)
+				})
+			});
+			data = dataFromDatabase;
+		}
+		else {
+			console.log(`data of this queryObj key ${queryObjHashValue} exists in the redis cache!`);
+			data = JSON.parse(cacheDataGetByKey);
+		}
     res.json({
       status: 'success',
       data
