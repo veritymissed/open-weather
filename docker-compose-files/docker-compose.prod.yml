@@ -9,6 +9,7 @@ services:
       - '8000'
     ports:
       - '8000:8000'
+    restart: on-failure
     command: node server.js
     env_file: ./env/.env.prod
   task-queue:
@@ -16,6 +17,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: weather-data-fetch-queue-container
+    restart: on-failure
     command:  bash -c "node syncDatabase.js && node fetchApiQueue.js"
     env_file: ./env/.env.prod
   postgres:
@@ -33,6 +35,7 @@ services:
       - "5432:5432"
   redis:
     image: 'bitnami/redis:latest'
+    restart: always
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     expose:
