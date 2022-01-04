@@ -108,15 +108,32 @@ app.get('/api', async function(req ,res){
 			let dataFromDatabase = await WeatherData.findAll({
 				where: queryObj
 			});
+      // console.log('dataFromDatabase', dataFromDatabase);
+
 			await new Promise(function(resolve, reject) {
-				redisClient.set(queryObjHashValue, JSON.stringify(dataFromDatabase), (err, res) => {
-					if(err) reject(err);
-					else resolve(res)
-				})
+        let expireTimeSecond;
+        if(dataFromDatabase.length === 0){
+          expireTimeSecond = 60*60;
+        }
+        else{
+          let randomHour = Math.floor(Math.random()*10); //0-9
+          expireTimeSecond = 60*60* (24+randomHour);
+        }
+
+        redisClient.set(
+          queryObjHashValue, JSON.stringify(dataFromDatabase),
+          'EX', expireTimeSecond,
+          (err, res) => {
+            if(err) reject(err);
+            else resolve(res);
+          }
+        );
+
 			});
 			data = dataFromDatabase;
 		}
 		else {
+      // console.log('cacheDataGetByKey', cacheDataGetByKey);
 			console.log(`data of this queryObj key ${queryObjHashValue} exists in the redis cache!`);
 			data = JSON.parse(cacheDataGetByKey);
 		}
@@ -182,7 +199,6 @@ server.listen(port)
 server.on('error', onError)
 server.on('listening', onListening)
 
-// app.on('error', onError);
 
 function normalizePort (val) {
   var port = parseInt(val, 10)
